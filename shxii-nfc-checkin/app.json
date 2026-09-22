@@ -11,7 +11,8 @@
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.shxiisteam.shxiinfccheckin",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NFCReaderUsageDescription": "This app uses NFC to scan check-in tags."
       }
     },
     "android": {
@@ -22,7 +23,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.shxiisteam.shxiinfccheckin"
+      "package": "com.shxiisteam.shxiinfccheckin",
+      "permissions": ["android.permission.NFC"]
     },
     "web": {
       "output": "static",
@@ -36,6 +38,14 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "This app uses NFC to scan check-in tags.",
+          "selectIdentifiers": [],
+          "systemCodes": []
         }
       ]
     ],

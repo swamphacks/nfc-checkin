@@ -11,21 +11,16 @@ import {
 } from "react-native";
 import NfcManager, { NfcTech, Ndef } from "react-native-nfc-manager";
 import * as Crypto from "expo-crypto";
-import { CameraView, useCameraPermissions } from "expo-camera";
 
 NfcManager.start();
 
 export default function LinkScreen() {
   const [status, setStatus] = useState("Initializing...");
   const [nfcUuid, setNfcUuid] = useState("");
-  const [userId, setUserId] = useState("");
   const [scanningNfc, setScanningNfc] = useState(false);
-  const [scanningQr, setScanningQr] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scanningRef = useRef(false);
 
-  const [permission, requestPermission] = useCameraPermissions();
-  const qrLockRef = useRef(false); // prevents duplicate scans firing rapidly
 
   useEffect(() => {
     checkSupport();
@@ -96,55 +91,20 @@ export default function LinkScreen() {
     NfcManager.cancelTechnologyRequest().catch(() => {});
   }
 
-  // ---------- QR ----------
-  async function openQrScanner() {
-    if (!permission?.granted) {
-      const res = await requestPermission();
-      if (!res.granted) {
-        setError("Camera permission is required to scan QR codes");
-        return;
-      }
-    }
-    qrLockRef.current = false;
-    setScanningQr(true);
-  }
 
-  function handleBarcodeScanned(result: { data: string }) {
-    if (qrLockRef.current) return; // ignore repeat fires while closing
-    qrLockRef.current = true;
-    setUserId(result.data);
-    setScanningQr(false);
-    setStatus("QR code captured");
-  }
 
-  // ---------- Link action ----------
-  async function linkTagToUser() {
-    if (!nfcUuid || !userId) return;
-    setStatus("Linking...");
-    try {
-      const res = await fetch("https://localhost:3000/api/nfc-links", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nfcUuid, userId }),
-      });
-      if (!res.ok) throw new Error(`Server responded ${res.status}`);
-      setStatus("Linked successfully");
-    } catch (e: any) {
-      setError(e?.message ?? String(e));
-      setStatus("Link failed");
-    }
-  }
+
+
 
   function resetAll() {
     setNfcUuid("");
-    setUserId("");
     setError(null);
     setStatus("Ready");
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Link NFC Tag to User</Text>
+      <Text style={styles.title}>Read nfc tag</Text>
       <Text style={styles.status}>{status}</Text>
 
       <View style={styles.field}>
@@ -162,17 +122,6 @@ export default function LinkScreen() {
         />
       </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>User ID (from QR)</Text>
-        <TextInput
-          style={styles.input}
-          value={userId}
-          editable={false}
-          placeholder="Not scanned yet"
-        />
-        <Button title="Scan QR Code" onPress={openQrScanner} />
-      </View>
-
       <View style={styles.actions}>
         <Button
           title="Link Tag to User"
@@ -186,23 +135,6 @@ export default function LinkScreen() {
       {Platform.OS === "android" && scanningNfc && (
         <Text style={styles.hint}>Hold your phone's back near the tag.</Text>
       )}
-
-      <Modal visible={scanningQr} animationType="slide">
-        <View style={{ flex: 1 }}>
-          <CameraView
-            style={{ flex: 1 }}
-            facing="back"
-            barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-            onBarcodeScanned={handleBarcodeScanned}
-          />
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setScanningQr(false)}
-          >
-            <Text style={styles.closeButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
     </View>
   );
 }
