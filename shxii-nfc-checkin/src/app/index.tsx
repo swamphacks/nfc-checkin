@@ -122,7 +122,7 @@ export default function LinkScreen() {
     if (!nfcUuid || !userId) return;
     setStatus("Linking...");
     try {
-      const res = await fetch("https://localhost:3000/api/nfc-links", {
+      const res = await fetch("http://192.168.56.1:3000/api/nfc-links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nfcUuid, userId }),
@@ -130,6 +130,7 @@ export default function LinkScreen() {
       if (!res.ok) throw new Error(`Server responded ${res.status}`);
       setStatus("Linked successfully");
     } catch (e: any) {
+        console.log(e)
       setError(e?.message ?? String(e));
       setStatus("Link failed");
     }

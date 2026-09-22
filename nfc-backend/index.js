@@ -1,16 +1,36 @@
 const express = require("express");
 const { Pool } = require("pg");
+const cors = require('cors');
 require("dotenv").config();
 
 
 const app = express();
+const allowedOrigins = [
+  'http://localhost:8081',
+  'http://10.136.170.105:8081'
+];
 
-app.use(cors(""))
+const corsOptions = {
+   origin: function (origin, callback) {
+     // Allow requests with no origin (like mobile apps or curl requests)
+     if (!origin) return callback(null, true);
+
+     if (allowedOrigins.indexOf(origin) !== -1) {
+       callback(null, true);
+     } else {
+       callback(new Error('Not allowed by CORS'));
+     }
+   }
+ };
+
+
+app.use(cors(corsOptions))
 app.use(express.json());
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 app.post("/api/nfc-links", async (req, res) => {
+    console.log("REACHED")
   const { nfcUuid, userId } = req.body;
   if (!nfcUuid || !userId) {
     return res.status(400).json({ error: "nfcUuid and userId are required" });
@@ -31,6 +51,6 @@ app.post("/api/nfc-links", async (req, res) => {
   }
 });
 
-app.listen(process.env.PORT, () => {
+app.listen(process.env.PORT, '0.0.0.0', () => {
   console.log(`API running on port ${process.env.PORT}`);
 });
