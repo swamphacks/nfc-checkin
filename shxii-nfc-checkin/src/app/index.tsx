@@ -1,98 +1,115 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import NfcManager, { NfcTech } from 'react-native-nfc-manager';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { submitCheckIn } from '@/lib/checkin';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+type Status = 'idle' | 'scanning' | 'success' | 'error' | 'unsupported';
 
-export default function HomeScreen() {
+export default function CheckInScreen() {
+  const [status, setStatus] = useState<Status>('idle');
+  const [lastSerial, setLastSerial] = useState<string | null>(null);
+
+  useEffect(() => {
+    NfcManager.start();
+    NfcManager.isSupported().then((supported) => {
+      if (!supported) setStatus('unsupported');
+    });
+  }, []);
+
+  async function scanTag() {
+    setStatus('scanning');
+    try {
+      await NfcManager.requestTechnology(NfcTech.Ndef);
+      const tag = await NfcManager.getTag();
+      const serial = tag?.id ?? null;
+      if (!serial) throw new Error('Tag had no serial');
+
+      setLastSerial(serial);
+      setStatus('success');
+      await submitCheckIn(serial, 'nfc');
+    } catch (ex) {
+      console.warn('NFC scan failed', ex);
+      setStatus('error');
+    } finally {
+      NfcManager.cancelTechnologyRequest().catch(() => {});
+    }
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
+        <ThemedText type="title" style={styles.title}>
+          Check-In
         </ThemedText>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        {status === 'unsupported' && (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.centerText}>
+            can't use app on this :s 
+          </ThemedText>
+        )}
 
-        {Platform.OS === 'web' && <WebBadge />}
+        {status !== 'unsupported' && (
+          <Pressable onPress={scanTag} disabled={status === 'scanning'}>
+            {({ pressed }) => (
+              <ThemedView
+                type="backgroundElement"
+                style={[styles.scanButton, pressed && styles.pressed]}>
+                <ThemedText type="link">
+                  {status === 'scanning' ? 'Hold tag near device…' : 'Scan NFC Tag'}
+                </ThemedText>
+              </ThemedView>
+            )}
+          </Pressable>
+        )}
+
+        {status === 'success' && lastSerial && (
+          <ThemedView type="backgroundElement" style={styles.resultBox}>
+            <ThemedText type="small" themeColor="textSecondary">
+              Checked in
+            </ThemedText>
+            <ThemedText type="code">{lastSerial}</ThemedText>
+          </ThemedView>
+        )}
+
+        {status === 'error' && (
+          <ThemedText type="small" themeColor="textSecondary">
+            Couldn't read that tag — try again.
+          </ThemedText>
+        )}
       </SafeAreaView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
+  container: { flex: 1, justifyContent: 'center', flexDirection: 'row' },
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
+    justifyContent: 'center',
+    gap: Spacing.four,
+    paddingBottom: BottomTabInset,
     maxWidth: MaxContentWidth,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
+  title: { textAlign: 'center' },
+  centerText: { textAlign: 'center' },
+  scanButton: {
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.five,
+    borderRadius: Spacing.five,
+  },
+  resultBox: {
+    paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    borderRadius: Spacing.three,
+    alignItems: 'center',
+    gap: Spacing.one,
   },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  pressed: { opacity: 0.7 },
 });
