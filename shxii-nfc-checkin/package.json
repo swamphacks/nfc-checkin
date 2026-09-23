@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.15",
+    "@react-native-picker/picker": "2.11.4",
     "expo": "~57.0.19",
     "expo-camera": "~57.0.5",
     "expo-constants": "~57.0.17",

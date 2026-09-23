@@ -122,7 +122,7 @@ export default function LinkScreen() {
     if (!nfcUuid || !userId) return;
     setStatus("Linking...");
     try {
-      const res = await fetch("http://192.168.56.1:3000/api/nfc-links", {
+      const res = await fetch(" https://serving-lark-numbing.ngrok-free.dev/api/nfc-links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nfcUuid, userId }),

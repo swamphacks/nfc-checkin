@@ -30,17 +30,18 @@ app.use(express.json());
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 app.post("/api/nfc-links", async (req, res) => {
-    console.log("REACHED")
-  const { nfcUuid, userId } = req.body;
+  let { nfcUuid, userId } = req.body;
+  userId = "fe742efe-dd5d-4f2b-8ef9-6c536e762964";
   if (!nfcUuid || !userId) {
     return res.status(400).json({ error: "nfcUuid and userId are required" });
   }
 
   try {
+
     const result = await pool.query(
       `INSERT INTO nfc_tags_user (tag_id, user_id)
        VALUES ($1, $2)
-       ON CONFLICT (nfc_uuid) DO UPDATE SET user_id = EXCLUDED.user_id
+       ON CONFLICT (tag_id) DO UPDATE SET user_id = EXCLUDED.user_id
        RETURNING *`,
       [nfcUuid, userId]
     );
@@ -50,6 +51,20 @@ app.post("/api/nfc-links", async (req, res) => {
     res.status(500).json({ error: "Database error" });
   }
 });
+
+app.get("/api/event-names", async (req, res) => {
+
+    try{
+        const result = await pool.query(
+        `SELECT title || ' workshop' as Names FROM workshops
+        UNION ALL
+        SELECT name || ' redeemable' as Names FROM redeemables`)
+        res.status(200).json(result.rows)
+    } catch(err){
+        console.error(err)
+        res.status(500).json({error: "Database error"})
+    }
+})
 
 app.listen(process.env.PORT, '0.0.0.0', () => {
   console.log(`API running on port ${process.env.PORT}`);

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import NfcManager, { NfcTech, Ndef } from "react-native-nfc-manager";
 import * as Crypto from "expo-crypto";
+import { Picker } from '@react-native-picker/picker';
 
 NfcManager.start();
 
@@ -20,15 +21,36 @@ export default function LinkScreen() {
   const [scanningNfc, setScanningNfc] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scanningRef = useRef(false);
+  const [selectedEvent, setSelectedEvent] = useState("")
+  const [events, setEvents] = useState([])
 
 
   useEffect(() => {
     checkSupport();
+
     return () => {
       NfcManager.cancelTechnologyRequest().catch(() => {});
     };
   }, []);
 
+    useEffect(() =>{
+        populateEvents();
+        });
+
+
+  async function populateEvents(){
+      try {
+          const results = await fetch("https://serving-lark-numbing.ngrok-free.dev/api/event-names")
+          const data = await results.json()
+          const lis = data.map((d) => {
+              return d.names
+          })
+          setEvents(lis);
+
+      } catch (e: any){
+          setStatus("Couldn't populate events. Server error likely.")
+      }
+  }
   async function checkSupport() {
     try {
       const supported = await NfcManager.isSupported();
@@ -91,6 +113,16 @@ export default function LinkScreen() {
     NfcManager.cancelTechnologyRequest().catch(() => {});
   }
 
+    async function registerUser(){
+
+        try{
+            //endpoint to register user for redeemable or workshop
+            //two branches should be here depending on if end in workshop or redeemable
+        } catch(e: any){
+            console.error(e)
+        }
+    }
+
 
 
 
@@ -121,13 +153,26 @@ export default function LinkScreen() {
           color={scanningNfc ? "#c0392b" : undefined}
         />
       </View>
+        <View>
+              <Text>Select a course:</Text>
 
+              <Picker
+                selectedValue={selectedEvent}
+                onValueChange={(itemValue) => setSelectedEvent(itemValue)}
+              >
+                {events.map((e) => {
+                    return <Picker.Item label = {e} value = {e}/>
+                    })}
+              </Picker>
+
+              <Text>Selected: {selectedEvent}</Text>
+            </View>
+
+      <View style = {styles.actions}>
+        <Button title = "Register" onPress ={registerUser} color ="#888"/>
+      </View>
       <View style={styles.actions}>
-        <Button
-          title="Link Tag to User"
-          onPress={linkTagToUser}
-          disabled={!nfcUuid || !userId}
-        />
+
         <Button title="Reset" onPress={resetAll} color="#888" />
       </View>
 
