@@ -21,8 +21,12 @@ export default function LinkScreen() {
   const [scanningNfc, setScanningNfc] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scanningRef = useRef(false);
-  const [selectedEvent, setSelectedEvent] = useState("")
-  const [events, setEvents] = useState([])
+  const [workshops, setWorkshops] = useState([])
+  const [redeemables, setRedeemables] = useState([])
+  const [selectedRedeemable, setSelectedRedeemable] = useState()
+  const [selectedWorkshop, setSelectedWorkshop] = useState()
+  const [wantWorkshop, setWantWorkshop] = useState(true)
+
 
 
   useEffect(() => {
@@ -35,17 +39,22 @@ export default function LinkScreen() {
 
     useEffect(() =>{
         populateEvents();
-        });
+    }, []);
 
 
   async function populateEvents(){
       try {
           const results = await fetch("https://serving-lark-numbing.ngrok-free.dev/api/event-names")
           const data = await results.json()
-          const lis = data.map((d) => {
-              return d.names
+          console.log()
+          const workshopLis = data.workshops.map((d) => {
+              return d.title
           })
-          setEvents(lis);
+          const redeemableLis = data.redeemables.map((d) => {
+              return d.name
+          })
+          setWorkshops(workshopLis);
+          setRedeemables(redeemableLis);
 
       } catch (e: any){
           setStatus("Couldn't populate events. Server error likely.")
@@ -113,11 +122,45 @@ export default function LinkScreen() {
     NfcManager.cancelTechnologyRequest().catch(() => {});
   }
 
+    function swapWant(){
+        setWantWorkshop(!wantWorkshop)
+    }
+
     async function registerUser(){
 
         try{
-            //endpoint to register user for redeemable or workshop
-            //two branches should be here depending on if end in workshop or redeemable
+            let event
+            let url = "https://serving-lark-numbing.ngrok-free.dev/"
+            if(wantWorkshop) {event = selectedWorkshop; url += "api/tag-workshop"}
+            else {event = selectedRedeemable; url += "api/tag-redeemable"}
+
+            if(!event) {setError("Select a workshop or redeemable before register"); return;}
+
+            if(!nfcUuid) {setError("Scan a nfc first please"); return;}
+// TODO: there was an error here where the event was being sent as undefined to the backend
+// not sure how to recreate it (it happened after i had the phone on for long and did a bunch of random stuff)
+// but its likely because of the way i define what event is
+            const data = {
+                nfc_id: nfcUuid,
+                event: event
+            }
+            const req = await fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+              });
+
+            const result = await req.json()
+
+            console.log(result)
+            //TODO: treat this result appropriately for frontend
+            setError("")
+            setStatus("Posted")
+            setSelectedWorkshop("")
+            setSelectedRedeemable("")
+            setNfcUuid("")
         } catch(e: any){
             console.error(e)
         }
@@ -154,18 +197,46 @@ export default function LinkScreen() {
         />
       </View>
         <View>
-              <Text>Select a course:</Text>
+        {wantWorkshop ? (
+            <>
+              <Text>Select a Workshop:</Text>
+             <Picker
+               selectedValue={selectedWorkshop}
+               onValueChange={(itemValue) => setSelectedWorkshop(itemValue)}
+             >
+               {workshops.map((name) => (
+                 <Picker.Item key={name} label={name} value={name} />
+               ))}
+             </Picker>
 
-              <Picker
-                selectedValue={selectedEvent}
-                onValueChange={(itemValue) => setSelectedEvent(itemValue)}
-              >
-                {events.map((e) => {
-                    return <Picker.Item label = {e} value = {e}/>
-                    })}
-              </Picker>
 
-              <Text>Selected: {selectedEvent}</Text>
+
+             <Button title = "Swap to Redeemable" onPress = {swapWant}/>
+             </>
+
+
+             ) :
+
+             (
+                 <>
+              <Text>Select a Redeemable:</Text>
+
+                 <Picker
+               selectedValue={selectedRedeemable}
+               onValueChange={(itemValue) => setSelectedRedeemable(itemValue)}
+             >
+               {redeemables.map((name) => (
+                 <Picker.Item key={name} label={name} value={name} />
+               ))}
+             </Picker>
+
+             <Button title = "Swap to Workshop" onPress = {swapWant}/>
+
+             </>)
+            }
+
+
+              <Text>Selected: {wantWorkshop ? selectedWorkshop : selectedRedeemable}</Text>
             </View>
 
       <View style = {styles.actions}>
