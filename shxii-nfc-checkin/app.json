@@ -47,7 +47,8 @@
           "selectIdentifiers": [],
           "systemCodes": []
         }
-      ]
+      ],
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

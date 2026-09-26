@@ -1,42 +1,33 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-  Platform,
-} from "react-native";
+import { View, Text, Button, StyleSheet, Platform } from "react-native";
 import { useNfcScan } from "../hooks/UseNfcScan";
-import { useQrScan } from "../hooks/useQrScan";
 import ScanComp from "./ScanComp";
-import QrScannerModal from "./QrScannerModal";
 import { useRegisterUser } from "../hooks/UseRegisterUser";
 import { useApi } from "../hooks/useApi";
+import GlowFeedback from "../utils/GlowFeedback";
 
-export default function LinkScreen() {
-  const [status, setStatus] = useState("");
-  const [error, setError] = useState(null);
+export default function SelectPage({ selectedEvent, registerUrl }) {
+  const [success, setSuccess] = useState(null);
+  const [trigger, setTrigger] = useState();
+  const [message, setMessage] = useState("");
 
   const { url } = useApi();
+  const {
+    status,
+    nfcUuid,
+    scanningNfc,
+    error,
+    startNfcScan,
+    stopNfcScan,
+    resetNfc,
+  } = useNfcScan();
 
   const { registerUser } = useRegisterUser();
 
-  const { nfcUuid, scanningNfc, startNfcScan, stopNfcScan, resetNfc } = useNfcScan();
-
-  const {
-    userId,
-    scanningQr,
-    qrError,
-    openQrScanner,
-    handleBarcodeScanned,
-    closeQrScanner,
-    resetQr,
-  } = useQrScan();
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Link NFC Tag to User</Text>
+      <Text style={styles.title}>Reading for {selectedEvent}</Text>
+      <Text style={styles.title}>Read nfc tag</Text>
       <Text style={styles.status}>{status}</Text>
 
       <ScanComp
@@ -46,27 +37,17 @@ export default function LinkScreen() {
         stopNfcScan={stopNfcScan}
         startNfcScan={startNfcScan}
       />
-
-      <View style={styles.field}>
-        <Text style={styles.label}>User ID (from QR)</Text>
-        <TextInput
-          style={styles.input}
-          value={userId}
-          editable={false}
-          placeholder="Not scanned yet"
-        />
-        <Button title="Scan QR Code" onPress={openQrScanner} />
-      </View>
+      <GlowFeedback trigger={trigger} success={success} />
 
       <View style={styles.actions}>
         <Button
-          title="Link Tag to User"
-          onPress={() => {
+          title="Register"
+          onPress={async () => {
             try {
               const val = await registerUser(
-                url + "api/checkin/nfc-links",
+                url + registerUrl,
                 nfcUuid,
-                userId,
+                selectedEvent,
               );
               resetNfc();
               setTrigger(Date.now());
@@ -80,30 +61,32 @@ export default function LinkScreen() {
               setSuccess(false);
             }
           }}
-          disabled={!nfcUuid || !userId}
-        />
-        <Button
-          title="Reset"
-          onPress={() => {
-            resetNfc();
-            resetQr();
-          }}
           color="#888"
         />
       </View>
 
-      {(error || qrError) && (
-        <Text style={styles.error}>{error || qrError}</Text>
-      )}
+      <View style={styles.actions}>
+        <Button
+          title="Reset"
+          onPress={() => {
+            resetNfc();
+            setMessage("");
+            setSuccess(null);
+          }}
+          color="#888"
+        />
+      </View>
+      <View style={styles.actions}>
+        {success ? (
+          <Text style={styles.hint}>{message}</Text>
+        ) : (
+          <Text style={styles.error}>{message}</Text>
+        )}
+      </View>
+      {error && <Text style={styles.error}>{error}</Text>}
       {Platform.OS === "android" && scanningNfc && (
         <Text style={styles.hint}>Hold your phone's back near the tag.</Text>
       )}
-
-      <QrScannerModal
-        visible={scanningQr}
-        onScanned={handleBarcodeScanned}
-        onCancel={closeQrScanner}
-      />
     </View>
   );
 }
@@ -125,4 +108,14 @@ const styles = StyleSheet.create({
   actions: { gap: 10, marginTop: 10 },
   error: { color: "red", textAlign: "center" },
   hint: { color: "#666", fontSize: 12, textAlign: "center" },
+  closeButton: {
+    position: "absolute",
+    bottom: 40,
+    alignSelf: "center",
+    backgroundColor: "#000000aa",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  closeButtonText: { color: "#fff", fontWeight: "600" },
 });
