@@ -27,12 +27,6 @@ export default function TabLayout() {
           title: "Home",
         }}
       />
-      <Tabs.Screen
-        name="redeem"
-        options={{
-          title: "redeem",
-        }}
-      />
     </Tabs>
   );
 }

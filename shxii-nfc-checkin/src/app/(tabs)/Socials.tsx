@@ -6,18 +6,30 @@ import { populateEvents } from "../../utils/PopulateEvents";
 
 export default function Socials() {
   const [socials, setSocials] = useState([]);
-  const [selectedSocials, setSelectedSocials] = useState();
+  const [selectedSocialId, setSelectedSocialId] = useState();
+  const [selectedSocialName, setSelectedSocialName] = useState();
+
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setSocials(populateEvents("api/socials/socials"));
+    async function loadSocials() {
+      try {
+        const data = await populateEvents("api/workshops/socials");
+        setSocials(data);
+      } catch (err: any) {
+        setError(err?.message ?? String(err));
+      }
+    }
+    loadSocials();
   }, []);
 
   function goToSelect() {
     router.push({
       pathname: "/select",
       params: {
-        selectedEvent: selectedSocials,
-        registerUrl: "api/socials/tag-social",
+        selectedEventName: selectedSocialName,
+        selectedEventId: selectedSocialId,
+        registerUrl: "api/workshops/tag",
       },
     });
   }
@@ -27,15 +39,28 @@ export default function Socials() {
       <View>
         <LabeledPicker
           label="Select a Socials:"
-          selectedValue={selectedSocials}
-          onValueChange={(value) => setSelectedSocials(value)}
+          selectedValue={selectedSocialId}
+          onValueChange={(value) => {
+            setSelectedSocialId(value);
+            const found = socials.find((s) => s.id === value);
+            setSelectedSocialName(found?.name);
+          }}
+
           items={socials}
         />
-        <Text>Selected: {selectedSocials}</Text>
+        <Text>Selected: {selectedSocialName}</Text>
       </View>
 
       <View style={styles.actions}>
-        <Button title="Select pg" onPress={goToSelect} color="#888" />
+        <Button
+          title="Select pg"
+          onPress={goToSelect}
+          color="#888"
+          disabled={!selectedSocialName}
+        />
+      </View>
+      <View style={styles.actions}>
+        <Text style={styles.error}>{error}</Text>
       </View>
     </View>
   );

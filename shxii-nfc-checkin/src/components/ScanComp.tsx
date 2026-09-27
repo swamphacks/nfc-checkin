@@ -10,7 +10,7 @@ export default function ScanComp({
   function handleScanSuccess(uuid) {}
 
   function handleScanError(err) {
-    console.log("scan error:", err);
+    console.error("scan error:", err);
   }
 
   return (

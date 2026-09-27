@@ -6,7 +6,11 @@ import { useRegisterUser } from "../hooks/UseRegisterUser";
 import { useApi } from "../hooks/useApi";
 import GlowFeedback from "../utils/GlowFeedback";
 
-export default function SelectPage({ selectedEvent, registerUrl }) {
+export default function SelectPage({
+  selectedEventName,
+  registerUrl,
+  selectedEventId,
+}) {
   const [success, setSuccess] = useState(null);
   const [trigger, setTrigger] = useState();
   const [message, setMessage] = useState("");
@@ -26,7 +30,7 @@ export default function SelectPage({ selectedEvent, registerUrl }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Reading for {selectedEvent}</Text>
+      <Text style={styles.title}>Reading for {selectedEventName}</Text>
       <Text style={styles.title}>Read nfc tag</Text>
       <Text style={styles.status}>{status}</Text>
 
@@ -47,14 +51,14 @@ export default function SelectPage({ selectedEvent, registerUrl }) {
               const val = await registerUser(
                 url + registerUrl,
                 nfcUuid,
-                selectedEvent,
+                selectedEventId,
               );
               resetNfc();
               setTrigger(Date.now());
               setSuccess(!!val.res);
               setMessage(val.msg);
             } catch (e) {
-              console.log("register failed:", e);
+              console.error("register failed:", e);
               setMessage(val.msg);
               resetNfc();
               setTrigger(Date.now());
@@ -62,6 +66,7 @@ export default function SelectPage({ selectedEvent, registerUrl }) {
             }
           }}
           color="#888"
+          disabled={!nfcUuid}
         />
       </View>
 

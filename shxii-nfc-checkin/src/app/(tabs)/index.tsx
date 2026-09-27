@@ -7,22 +7,27 @@ import {
   StyleSheet,
   Platform,
 } from "react-native";
-import { useNfcScan } from "../hooks/UseNfcScan";
-import { useQrScan } from "../hooks/useQrScan";
-import ScanComp from "./ScanComp";
-import QrScannerModal from "./QrScannerModal";
-import { useRegisterUser } from "../hooks/UseRegisterUser";
-import { useApi } from "../hooks/useApi";
+import { useNfcScan } from "../../hooks/UseNfcScan";
+import { useQrScan } from "../../hooks/useQrScanner";
+import ScanComp from "../../components/ScanComp";
+import QrScannerModal from "../../components/QrScannerModal";
+import { useRegisterUser } from "../../hooks/UseRegisterUser";
+import { useApi } from "../../hooks/useApi";
+import GlowFeedback from "../../utils/GlowFeedback";
 
 export default function LinkScreen() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState(null);
+  const [trigger, setTrigger] = useState();
 
   const { url } = useApi();
 
   const { registerUser } = useRegisterUser();
 
-  const { nfcUuid, scanningNfc, startNfcScan, stopNfcScan, resetNfc } = useNfcScan();
+  const { nfcUuid, scanningNfc, startNfcScan, stopNfcScan, resetNfc } =
+    useNfcScan();
 
   const {
     userId,
@@ -61,7 +66,7 @@ export default function LinkScreen() {
       <View style={styles.actions}>
         <Button
           title="Link Tag to User"
-          onPress={() => {
+          onPress={async () => {
             try {
               const val = await registerUser(
                 url + "api/checkin/nfc-links",
@@ -72,8 +77,8 @@ export default function LinkScreen() {
               setTrigger(Date.now());
               setSuccess(!!val.res);
               setMessage(val.msg);
-            } catch (e) {
-              console.log("register failed:", e);
+            } catch (e: any) {
+              console.error("register failed:", e);
               setMessage(val.msg);
               resetNfc();
               setTrigger(Date.now());
@@ -91,7 +96,14 @@ export default function LinkScreen() {
           color="#888"
         />
       </View>
-
+      <GlowFeedback trigger={trigger} success={success} />
+      <View style={styles.actions}>
+        {success ? (
+          <Text style={styles.hint}>{message}</Text>
+        ) : (
+          <Text style={styles.error}>{message}</Text>
+        )}
+      </View>
       {(error || qrError) && (
         <Text style={styles.error}>{error || qrError}</Text>
       )}

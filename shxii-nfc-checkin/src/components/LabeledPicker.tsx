@@ -12,7 +12,7 @@ export default function LabeledPicker({
       <Text>{label}</Text>
       <Picker selectedValue={selectedValue} onValueChange={onValueChange}>
         {items.map((i) => (
-          <Picker.Item key={i.name} label={i.name} value={i.name} />
+          <Picker.Item key={i.id} label={i.name} value={i.id} />
         ))}
       </Picker>
     </View>

@@ -6,18 +6,29 @@ import { populateEvents } from "../../utils/PopulateEvents";
 
 export default function Workshops() {
   const [workshops, setWorkshops] = useState([]);
-  const [selectedWorkshop, setSelectedWorkshop] = useState();
+  const [selectedWorkshopName, setSelectedWorkshopName] = useState();
+  const [selectedWorkshopId, setSelectedWorkshopId] = useState();
 
+  const [error, setError] = useState("");
   useEffect(() => {
-    setWorkshops(populateEvents("api/workshops/workshops"));
+    async function loadWorkshops() {
+      try {
+        const data = await populateEvents("api/workshops/workshops");
+        setWorkshops(data);
+      } catch (err: any) {
+        setError(err?.message ?? String(err));
+      }
+    }
+    loadWorkshops();
   }, []);
 
   function goToSelect() {
     router.push({
       pathname: "/select",
       params: {
-        selectedEvent: selectedWorkshop,
-        registerUrl: "api/workshops/tag-workshop",
+        selectedEventName: selectedWorkshopName,
+        selectedEventId: selectedWorkshopId,
+        registerUrl: "api/workshops/tag",
       },
     });
   }
@@ -27,15 +38,29 @@ export default function Workshops() {
       <View>
         <LabeledPicker
           label="Select a Workshop:"
-          selectedValue={selectedWorkshop}
-          onValueChange={(value) => setSelectedWorkshop(value)}
+          selectedValue={selectedWorkshopId}
+          onValueChange={(value) => {
+            setSelectedWorkshopId(value);
+            const found = workshops.find((w) => w.id === value);
+            setSelectedWorkshopName(found?.name);
+          }}
+
           items={workshops}
         />
-        <Text>Selected: {selectedWorkshop}</Text>
+        <Text>Selected: {selectedWorkshopName}</Text>
       </View>
 
       <View style={styles.actions}>
-        <Button title="Select pg" onPress={goToSelect} color="#888" />
+        <Button
+          title="Select pg"
+          onPress={goToSelect}
+          color="#888"
+          disabled={!selectedWorkshopName}
+        />
+      </View>
+
+      <View style={styles.actions}>
+        <Text style={styles.error}>{error}</Text>
       </View>
     </View>
   );

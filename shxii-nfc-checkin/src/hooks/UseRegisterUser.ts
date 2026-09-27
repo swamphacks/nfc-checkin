@@ -3,7 +3,7 @@ export function useRegisterUser() {
     try {
       const data = {
         nfc_id: nfcUuid,
-        event: event,
+        event_id: event,
       };
       const req = await fetch(url, {
         method: "POST",
@@ -15,10 +15,8 @@ export function useRegisterUser() {
 
       const result = await req.json();
 
-      if (result.Outcome == "success") {
-        return { res: true, msg: result.msg };
-      }
-      return { res: false, msg: result.msg };
+
+      return result;
     } catch (e: any) {
       console.error(e);
       return { res: false, msg: e };
