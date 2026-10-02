@@ -23,11 +23,14 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: ./shxii-nfc-checkin
 
       - name: Build Android APK
         run: eas build --platform android --profile preview --non-interactive --wait
+        working-directory: ./shxii-nfc-checkin
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
 
       - name: Get build output
         id: build
