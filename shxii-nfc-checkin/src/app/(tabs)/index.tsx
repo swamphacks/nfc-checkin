@@ -38,6 +38,7 @@ export default function LinkScreen() {
     closeQrScanner,
     resetQr,
   } = useQrScan();
+    const parsedUserId = userId.replace("IDENT::", "");
 
   return (
     <View style={styles.container}>
@@ -56,7 +57,7 @@ export default function LinkScreen() {
         <Text style={styles.label}>User ID (from QR)</Text>
         <TextInput
           style={styles.input}
-          value={userId}
+          value={parsedUserId}
           editable={false}
           placeholder="Not scanned yet"
         />
@@ -71,21 +72,23 @@ export default function LinkScreen() {
               const val = await registerUser(
                 url + "api/checkin/nfc-links",
                 nfcUuid,
-                userId,
+                parsedUserId,
               );
               resetNfc();
+              resetQr();
               setTrigger(Date.now());
               setSuccess(!!val.res);
               setMessage(val.msg);
             } catch (e: any) {
               console.error("register failed:", e);
-              setMessage(val.msg);
+              setMessage(e?.message ?? "Something went wrong");
               resetNfc();
               setTrigger(Date.now());
               setSuccess(false);
+              resetQr();
             }
           }}
-          disabled={!nfcUuid || !userId}
+          disabled={!nfcUuid || !parsedUserId}
         />
         <Button
           title="Reset"

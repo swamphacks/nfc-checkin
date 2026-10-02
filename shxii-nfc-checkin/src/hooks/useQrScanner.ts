@@ -25,7 +25,6 @@ export function useQrScan() {
 
   function handleBarcodeScanned(result) {
     if (qrLockRef.current) return; // ignore repeat fires while closing
-    qrLockRef.current = true;
     setUserId(result.data);
     setScanningQr(false);
     setQrStatus("QR code captured");

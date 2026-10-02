@@ -1,0 +1,54 @@
+name: EAS Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Android APK
+        run: eas build --platform android --profile preview --non-interactive --wait
+
+      - name: Get build output
+        id: build
+        run: |
+          BUILD_URL=$(eas build:list --platform android --limit 1 --json --non-interactive | node -e "
+            let data = '';
+            process.stdin.on('data', d => data += d);
+            process.stdin.on('end', () => {
+              const builds = JSON.parse(data);
+              console.log(builds[0].artifacts.buildUrl);
+            });
+          ")
+          echo "apk_url=$BUILD_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download APK
+        run: curl -L "${{ steps.build.outputs.apk_url }}" -o app.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          files: app.apk
+          name: "Android Build #${{ github.run_number }}"

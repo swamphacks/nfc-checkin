@@ -19,7 +19,7 @@ export function useRegisterUser() {
       return result;
     } catch (e: any) {
       console.error(e);
-      return { res: false, msg: e };
+      return { res: false, msg: e?.message ?? String(e) };
     }
   }
 
