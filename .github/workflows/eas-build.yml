@@ -34,6 +34,9 @@ jobs:
 
       - name: Get build output
         id: build
+        working-directory: ./shxii-nfc-checkin
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           BUILD_URL=$(eas build:list --platform android --limit 1 --json --non-interactive | node -e "
             let data = '';
@@ -46,11 +49,12 @@ jobs:
           echo "apk_url=$BUILD_URL" >> "$GITHUB_OUTPUT"
 
       - name: Download APK
+        working-directory: ./mobile
         run: curl -L "${{ steps.build.outputs.apk_url }}" -o app.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          files: app.apk
+          files: mobile/app.apk
           name: "Android Build #${{ github.run_number }}"
