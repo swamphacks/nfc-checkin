@@ -1,20 +1,24 @@
 import { useEffect, useState } from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import LabeledPicker from "../../components/LabeledPicker";
 import { populateEvents } from "../../utils/PopulateEvents";
+import SwampFrame from "../../components/SwampFrame";
+import PixelButton from "../../components/PixelButton";
 
 export default function Socials() {
-  const [socials, setSocials] = useState([]);
-  const [selectedSocialId, setSelectedSocialId] = useState();
-  const [selectedSocialName, setSelectedSocialName] = useState();
+  const [socials, setSocials] = useState<
+    Array<{ id: string | number; name: string }>
+  >([]);
+  const [selectedSocialId, setSelectedSocialId] = useState<string | number>();
+  const [selectedSocialName, setSelectedSocialName] = useState<string>();
 
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadSocials() {
       try {
-        const data = await populateEvents("api/workshops/socials");
+        const data = await populateEvents("nfc/workshops/socials");
         setSocials(data);
       } catch (err: any) {
         setError(err?.message ?? String(err));
@@ -29,46 +33,63 @@ export default function Socials() {
       params: {
         selectedEventName: selectedSocialName,
         selectedEventId: selectedSocialId,
-        registerUrl: "api/workshops/tag",
+        registerUrl: "nfc/workshops/tag",
       },
     });
   }
 
   return (
-    <View style={styles.container}>
-      <View>
-        <LabeledPicker
-          label="Select a Socials:"
-          selectedValue={selectedSocialId}
-          onValueChange={(value) => {
-            setSelectedSocialId(value);
-            const found = socials.find((s) => s.id === value);
-            setSelectedSocialName(found?.name);
-          }}
+    <SwampFrame section="SOCIAL CHECK-IN">
+      <View style={styles.container}>
+        <Text style={styles.title}>Choose a gathering</Text>
+        <View>
+          <LabeledPicker
+            label="Select a Socials:"
+            selectedValue={selectedSocialId}
+            onValueChange={(value: string | number) => {
+              setSelectedSocialId(value);
+              const found = socials.find((s) => s.id === value);
+              setSelectedSocialName(found?.name);
+            }}
 
-          items={socials}
-        />
-        <Text>Selected: {selectedSocialName}</Text>
-      </View>
+            items={socials}
+          />
+          <Text style={styles.selectedLabel}>SELECTED ITEM</Text>
+          <Text style={styles.selectedValue}>
+            {selectedSocialName ?? "NO GATHERING SELECTED"}
+          </Text>
+        </View>
 
-      <View style={styles.actions}>
-        <Button
-          title="Select pg"
-          onPress={goToSelect}
-          color="#888"
-          disabled={!selectedSocialName}
-        />
+        <View style={styles.actions}>
+          <PixelButton
+            title="CONTINUE TO SCAN"
+            onPress={goToSelect}
+            disabled={!selectedSocialName}
+          />
+        </View>
+        <View style={styles.actions}>
+          <Text style={styles.error}>{error}</Text>
+        </View>
       </View>
-      <View style={styles.actions}>
-        <Text style={styles.error}>{error}</Text>
-      </View>
-    </View>
+    </SwampFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 20, justifyContent: "center" },
-  actions: { gap: 10, marginTop: 10 },
-  error: { color: "red", textAlign: "center" },
-  hint: { color: "#666", fontSize: 12, textAlign: "center" },
+  container: { flex: 1, padding: 22, gap: 20, justifyContent: "center" },
+  title: { color: "#F0F0D2", fontSize: 20, fontWeight: "900" },
+  selectedLabel: {
+    color: "#A7B59A",
+    fontSize: 10,
+    fontWeight: "800",
+    marginTop: 12,
+  },
+  selectedValue: {
+    color: "#D0DB79",
+    fontSize: 14,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  actions: { gap: 10, marginTop: 4 },
+  error: { color: "#E78370", textAlign: "center" },
 });

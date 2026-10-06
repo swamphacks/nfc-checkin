@@ -1,41 +1,31 @@
 import { StatusBar } from "expo-status-bar";
-import {
-  StyleSheet,
-  Text,
-  View,
-  Appearance,
-  useColorScheme,
-  Image,
-} from "react-native";
 import { Tabs } from "expo-router";
+import { SwampColors } from "../../constants/theme";
 
 export default function TabLayout() {
-  const colorscheme = useColorScheme();
-
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: "#FFA500",
-        tabBarInactiveTintColor: "#1E90FF",
-        headerShown: false,
-      }}
-      style={styles.container}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
+    <>
+      <StatusBar style="light" />
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: SwampColors.reed,
+          tabBarInactiveTintColor: SwampColors.muted,
+          tabBarStyle: {
+            backgroundColor: SwampColors.backgroundDeep,
+            borderTopColor: SwampColors.border,
+            borderTopWidth: 2,
+          },
+          tabBarLabelStyle: { fontFamily: "monospace", fontSize: 10 },
+          headerShown: false,
         }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+          }}
+        />
+      </Tabs>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

@@ -4,10 +4,9 @@ export async function populateEvents(extension) {
   const { url } = useApi();
   try {
     const results = await fetch(url + extension);
-
     const data = await results.json();
 
-    const lis = data.events.map((d) => {
+    const lis = data.map((d) => {
       return { name: d.name, id: d.id };
     });
 

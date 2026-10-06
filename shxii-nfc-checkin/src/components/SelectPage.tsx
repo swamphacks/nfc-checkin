@@ -5,14 +5,22 @@ import ScanComp from "./ScanComp";
 import { useRegisterUser } from "../hooks/UseRegisterUser";
 import { useApi } from "../hooks/useApi";
 import GlowFeedback from "../utils/GlowFeedback";
+import SwampFrame from "./SwampFrame";
+import PixelButton from "./PixelButton";
+
+type SelectPageProps = {
+  selectedEventName?: string | string[];
+  registerUrl?: string | string[];
+  selectedEventId?: string | string[];
+};
 
 export default function SelectPage({
   selectedEventName,
   registerUrl,
   selectedEventId,
-}) {
-  const [success, setSuccess] = useState(null);
-  const [trigger, setTrigger] = useState();
+}: SelectPageProps) {
+  const [success, setSuccess] = useState<boolean | null>(null);
+  const [trigger, setTrigger] = useState<number | undefined>();
   const [message, setMessage] = useState("");
 
   const { url } = useApi();
@@ -27,92 +35,118 @@ export default function SelectPage({
   } = useNfcScan();
 
   const { registerUser } = useRegisterUser();
+  const eventName = Array.isArray(selectedEventName)
+    ? selectedEventName[0]
+    : selectedEventName;
+  const eventId = Array.isArray(selectedEventId)
+    ? selectedEventId[0]
+    : selectedEventId;
+  const eventUrl = Array.isArray(registerUrl) ? registerUrl[0] : registerUrl;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Reading for {selectedEventName}</Text>
-      <Text style={styles.title}>Read nfc tag</Text>
-      <Text style={styles.status}>{status}</Text>
+    <SwampFrame section="EVENT CHECK-IN">
+      <View style={styles.container}>
+        <Text style={styles.eyebrow}>READING FOR</Text>
+        <Text style={styles.title}>{eventName ?? "SELECT AN EVENT"}</Text>
+        <Text style={styles.status}>{status || "READY TO SCAN"}</Text>
 
-      <ScanComp
-        styles={styles}
-        nfcUuid={nfcUuid}
-        scanningNfc={scanningNfc}
-        stopNfcScan={stopNfcScan}
-        startNfcScan={startNfcScan}
-      />
-      <GlowFeedback trigger={trigger} success={success} />
-
-      <View style={styles.actions}>
-        <Button
-          title="Register"
-          onPress={async () => {
-            try {
-              const val = await registerUser(
-                url + registerUrl,
-                nfcUuid,
-                selectedEventId,
-              );
-              resetNfc();
-              setTrigger(Date.now());
-              setSuccess(!!val.res);
-              setMessage(val.msg);
-            } catch (e) {
-              console.error("register failed:", e);
-              setMessage(val.msg);
-              resetNfc();
-              setTrigger(Date.now());
-              setSuccess(false);
-            }
-          }}
-          color="#888"
-          disabled={!nfcUuid}
+        <ScanComp
+          styles={styles}
+          nfcUuid={nfcUuid}
+          scanningNfc={scanningNfc}
+          stopNfcScan={stopNfcScan}
+          startNfcScan={startNfcScan}
         />
-      </View>
+        <GlowFeedback trigger={trigger} success={success} />
 
-      <View style={styles.actions}>
-        <Button
-          title="Reset"
-          onPress={() => {
-            resetNfc();
-            setMessage("");
-            setSuccess(null);
-          }}
-          color="#888"
-        />
-      </View>
-      <View style={styles.actions}>
-        {success ? (
-          <Text style={styles.hint}>{message}</Text>
-        ) : (
-          <Text style={styles.error}>{message}</Text>
+        <View style={styles.actions}>
+          <PixelButton
+            title="REGISTER CHECK-IN"
+            onPress={async () => {
+              try {
+                const val = await registerUser(
+                  url + (eventUrl ?? ""),
+                  nfcUuid,
+                  eventId,
+                );
+                resetNfc();
+                setTrigger(Date.now());
+                setSuccess(!!val.res);
+                setMessage(val.msg);
+              } catch (e) {
+                console.error("register failed:", e);
+                setMessage(
+                  e instanceof Error ? e.message : "Registration failed",
+                );
+                resetNfc();
+                setTrigger(Date.now());
+                setSuccess(false);
+              }
+            }}
+            disabled={!nfcUuid}
+          />
+        </View>
+
+        <View style={styles.actions}>
+          <PixelButton
+            title="RESET SCAN"
+            onPress={() => {
+              resetNfc();
+              setMessage("");
+              setSuccess(null);
+            }}
+            tone="secondary"
+          />
+        </View>
+        <View style={styles.actions}>
+          {success ? (
+            <Text style={styles.hint}>{message}</Text>
+          ) : (
+            <Text style={styles.error}>{message}</Text>
+          )}
+        </View>
+        {error && <Text style={styles.error}>{error}</Text>}
+        {Platform.OS === "android" && scanningNfc && (
+          <Text style={styles.hint}>Hold your phone's back near the tag.</Text>
         )}
       </View>
-      {error && <Text style={styles.error}>{error}</Text>}
-      {Platform.OS === "android" && scanningNfc && (
-        <Text style={styles.hint}>Hold your phone's back near the tag.</Text>
-      )}
-    </View>
+    </SwampFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 20, justifyContent: "center" },
-  title: { fontSize: 22, fontWeight: "600", textAlign: "center" },
-  status: { fontSize: 14, color: "#555", textAlign: "center" },
-  field: { gap: 8 },
-  label: { fontSize: 13, color: "#333", fontWeight: "500" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "#f5f5f5",
-    color: "#333",
+  container: { flex: 1, padding: 22, gap: 16, justifyContent: "center" },
+  eyebrow: {
+    fontSize: 10,
+    color: "#9BBC55",
+    fontWeight: "800",
+    textAlign: "center",
   },
-  actions: { gap: 10, marginTop: 10 },
-  error: { color: "red", textAlign: "center" },
-  hint: { color: "#666", fontSize: 12, textAlign: "center" },
+  title: {
+    fontSize: 22,
+    fontWeight: "900",
+    textAlign: "center",
+    color: "#F0F0D2",
+  },
+  status: {
+    fontSize: 12,
+    color: "#D0DB79",
+    textAlign: "center",
+    fontWeight: "700",
+  },
+  field: { gap: 8 },
+  label: { fontSize: 11, color: "#A7B59A", fontWeight: "700" },
+  input: {
+    borderWidth: 2,
+    borderColor: "#547247",
+    padding: 12,
+    backgroundColor: "#0B1711",
+    color: "#F0F0D2",
+    fontFamily: "monospace",
+  },
+  actions: { gap: 10, marginTop: 4 },
+  error: { color: "#E78370", textAlign: "center", fontSize: 12 },
+  hint: { color: "#BDE278", fontSize: 12, textAlign: "center" },
   closeButton: {
     position: "absolute",
     bottom: 40,

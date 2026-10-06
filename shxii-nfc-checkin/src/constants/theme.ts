@@ -9,19 +9,33 @@ import { Platform } from "react-native";
 
 export const Colors = {
   light: {
-    text: "#000000",
-    background: "#ffffff",
-    backgroundElement: "#F0F0F3",
-    backgroundSelected: "#E0E1E6",
-    textSecondary: "#60646C",
+    text: "#F0F0D2",
+    background: "#14251B",
+    backgroundElement: "#1C3023",
+    backgroundSelected: "#263B2B",
+    textSecondary: "#A7B59A",
   },
   dark: {
-    text: "#ffffff",
-    background: "#000000",
-    backgroundElement: "#212225",
-    backgroundSelected: "#2E3135",
-    textSecondary: "#B0B4BA",
+    text: "#F0F0D2",
+    background: "#14251B",
+    backgroundElement: "#1C3023",
+    backgroundSelected: "#263B2B",
+    textSecondary: "#A7B59A",
   },
+} as const;
+
+export const SwampColors = {
+  background: "#14251B",
+  backgroundDeep: "#0B1711",
+  panel: "#1C3023",
+  panelRaised: "#263B2B",
+  border: "#547247",
+  moss: "#9BBC55",
+  reed: "#D0DB79",
+  text: "#F0F0D2",
+  muted: "#A7B59A",
+  danger: "#E78370",
+  success: "#BDE278",
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;

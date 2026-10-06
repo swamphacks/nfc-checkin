@@ -1,4 +1,27 @@
-import { View, Text, TextInput, Button } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from "react-native";
+import PixelButton from "./PixelButton";
+
+type ScanCompProps = {
+  styles: {
+    field: StyleProp<ViewStyle>;
+    label: StyleProp<TextStyle>;
+    input: StyleProp<TextStyle>;
+  };
+  nfcUuid: string;
+  scanningNfc: boolean;
+  stopNfcScan: () => void;
+  startNfcScan: (
+    onSuccess?: (uuid: string) => void,
+    onError?: (error: unknown) => void,
+  ) => Promise<void>;
+};
 
 export default function ScanComp({
   styles,
@@ -6,10 +29,8 @@ export default function ScanComp({
   scanningNfc,
   stopNfcScan,
   startNfcScan,
-}) {
-  function handleScanSuccess(uuid) {}
-
-  function handleScanError(err) {
+}: ScanCompProps) {
+  function handleScanError(err: unknown) {
     console.error("scan error:", err);
   }
 
@@ -22,14 +43,14 @@ export default function ScanComp({
         editable={false}
         placeholder="Not scanned yet"
       />
-      <Button
-        title={scanningNfc ? "Stop NFC Scan" : "Scan NFC Tag"}
+      <PixelButton
+        title={scanningNfc ? "STOP NFC SCAN" : "SCAN NFC TAG"}
+        tone={scanningNfc ? "danger" : "primary"}
         onPress={
           scanningNfc
             ? stopNfcScan
-            : () => startNfcScan(handleScanSuccess, handleScanError)
+            : () => startNfcScan(undefined, handleScanError)
         }
-        color={scanningNfc ? "#c0392b" : undefined}
       />
     </View>
   );
